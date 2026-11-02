@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>英単語クイズ (全20問)</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            background: #ffffff;
+            max-width: 500px;
+            width: 100%;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        h1 {
+            font-size: 20px;
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .progress {
+            font-size: 14px;
+            color: #666;
+            text-align: right;
+            margin-bottom: 10px;
+        }
+        .word-card {
+            background-color: #eef2f5;
+            padding: 25px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .word {
+            font-size: 32px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .option-btn {
+            background-color: #ffffff;
+            border: 2px solid #3498db;
+            color: #3498db;
+            padding: 14px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+        .option-btn:hover {
+            background-color: #3498db;
+            color: #ffffff;
+        }
+        .option-btn.correct {
+            background-color: #2ecc71 !important;
+            border-color: #2ecc71 !important;
+            color: #fff !important;
+        }
+        .option-btn.wrong {
+            background-color: #e74c3c !important;
+            border-color: #e74c3c !important;
+            color: #fff !important;
+        }
+        .result-screen {
+            text-align: center;
+        }
+        .score {
+            font-size: 36px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 20px 0;
+        }
+        .restart-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .restart-btn:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="quiz-box">
+        <h1>英単語 4択クイズ</h1>
+        <div class="progress" id="progress">第 1 / 20 問</div>
+        <div class="word-card">
+            <div class="word" id="target-word">word</div>
+        </div>
+        <div class="options" id="options-container">
+            <!-- 選択肢ボタンがここに動的に作られます -->
+        </div>
+    </div>
+
+    <div id="result-box" class="result-screen" style="display: none;">
+        <h1>結果発表</h1>
+        <p>あなたのスコアは...</p>
+        <div class="score" id="final-score">0 / 20</div>
+        <button class="restart-btn" onclick="startQuiz()">もう一度挑戦する</button>
+    </div>
+</div>
+
+<script>
+// 画像から抽出した 1〜45 の単語データ[cite: 7]
+const wordsGroup1 = [
+    { num: 1, word: "look", mean: "に見える" },
+    { num: 2, word: "take", mean: "を持っていく" },
+    { num: 3, word: "make", mean: "を作る" },
+    { num: 4, word: "see", mean: "を見る" },
+    { num: 5, word: "watch", mean: "を注意して見る" },
+    { num: 6, word: "give", mean: "〜に…を与える" },
+    { num: 7, word: "work", mean: "働く" },
+    { num: 8, word: "call", mean: "〜を…と呼ぶ" },
+    { num: 9, word: "enjoy", mean: "を楽しむ" },
+    { num: 10, word: "find", mean: "を見つける" },
+    { num: 11, word: "practice", mean: "を練習する" },
+    { num: 12, word: "tell", mean: "〜に…を話す" },
+    { num: 13, word: "leave", mean: "を置き忘れる" },
+    { num: 14, word: "need", mean: "を必要とする" },
+    { num: 15, word: "say", mean: "を言う" },
+    { num: 16, word: "finish", mean: "を終える" },
+    { num: 17, word: "sell", mean: "を売る" },
+    { num: 18, word: "clean", mean: "を掃除する" },
+    { num: 19, word: "wait", mean: "待つ" },
+    { num: 20, word: "become", mean: "になる" },
+    { num: 21, word: "show", mean: "〜に…を見せる" },
+    { num: 22, word: "join", mean: "に加わる" },
+    { num: 23, word: "bring", mean: "を持ってくる" },
+    { num: 24, word: "move", mean: "を動かす" },
+    { num: 25, word: "put", mean: "を置く" },
+    { num: 26, word: "drive", mean: "を運転する" },
+    { num: 27, word: "rain", mean: "雨が降る" },
+    { num: 28, word: "win", mean: "に勝つ" },
+    { num: 29, word: "speak", mean: "を話す" },
+    { num: 30, word: "travel", mean: "旅行する" }
+];
+
+const wordsGroup2 = [
+    { num: 31, word: "hope", mean: "を望む" },
+    { num: 32, word: "ride", mean: "に乗る" },
+    { num: 33, word: "sound", mean: "に聞こえる" },
+    { num: 34, word: "wear", mean: "を身につけている" },
+    { num: 35, word: "train", mean: "列車" },
+    { num: 36, word: "hour", mean: "1時間" },
+    { num: 37, word: "weekend", mean: "週末" },
+    { num: 38, word: "restaurant", mean: "レストラン" },
+    { num: 39, word: "food", mean: "食べ物" },
+    { num: 40, word: "month", mean: "月" },
+    { num: 41, word: "station", mean: "駅" },
+    { num: 42, word: "festival", mean: "祭り" },
+    { num: 43, word: "ticket", mean: "チケット" },
+    { num: 44, word: "minute", mean: "分" },
+    { num: 45, word: "trip", mean: "旅行" }
+];
+
+const allWords = [...wordsGroup1, ...wordsGroup2];
+
+let currentQuestions = [];
+let currentIndex = 0;
+let score = 0;
+let isAnswering = false;
+
+// 配列をシャッフルする関数
+function shuffle(array) {
+    return array.sort(() => Math.random() - 0.5);
+}
+
+// クイズの初期化・出題問題の選定
+function startQuiz() {
+    currentIndex = 0;
+    score = 0;
+    document.getElementById("quiz-box").style.display = "block";
+    document.getElementById("result-box").style.display = "none";
+
+    // 1~30からランダムに5個選択
+    const randomFromGroup1 = shuffle([...wordsGroup1]).slice(0, 5);
+    
+    // 31~45の全15個と合わせて20個にする
+    const combined = [...wordsGroup2, ...randomFromGroup1];
+    
+    // 全20問をさらにランダムに並び替え
+    currentQuestions = shuffle(combined);
+
+    showQuestion();
+}
+
+// 問題の表示
+function showQuestion() {
+    isAnswering = true;
+    const q = currentQuestions[currentIndex];
+    
+    document.getElementById("progress").innerText = `第 ${currentIndex + 1} / 20 問`;
+    document.getElementById("target-word").innerText = q.word;
+
+    // ダミーの選択肢（正解以外から3つ選ぶ）
+    const otherMeans = allWords
+        .filter(item => item.mean !== q.mean)
+        .map(item => item.mean);
+    const wrongOptions = shuffle(otherMeans).slice(0, 3);
+
+    // 正解とダミーを混ぜてシャッフル
+    const options = shuffle([q.mean, ...wrongOptions]);
+
+    const optionsContainer = document.getElementById("options-container");
+    optionsContainer.innerHTML = "";
+
+    options.forEach(opt => {
+        const btn = document.createElement("button");
+        btn.className = "option-btn";
+        btn.innerText = opt;
+        btn.onclick = () => checkAnswer(btn, opt, q.mean);
+        optionsContainer.appendChild(btn);
+    });
+}
+
+// 正誤判定
+function checkAnswer(selectedBtn, selectedOpt, correctOpt) {
+    if (!isAnswering) return;
+    isAnswering = false;
+
+    const buttons = document.querySelectorAll(".option-btn");
+    
+    if (selectedOpt === correctOpt) {
+        selectedBtn.classList.add("correct");
+        score++;
+    } else {
+        selectedBtn.classList.add("wrong");
+        buttons.forEach(btn => {
+            if (btn.innerText === correctOpt) {
+                btn.classList.add("correct");
+            }
+        });
+    }
+
+    setTimeout(() => {
+        currentIndex++;
+        if (currentIndex < 20) {
+            showQuestion();
+        } else {
+            showResult();
+        }
+    }, 1200);
+}
+
+// 結果表示
+function showResult() {
+    document.getElementById("quiz-box").style.display = "none";
+    document.getElementById("result-box").style.display = "block";
+    document.getElementById("final-score").innerText = `${score} / 20 点`;
+}
+
+// 起動時スタート
+startQuiz();
+</script>
+
+</body>
+</html>
